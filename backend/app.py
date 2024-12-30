@@ -1,72 +1,75 @@
 from dotenv import load_dotenv
 import os
-from PIL import Image, ImageDraw
-from matplotlib import pyplot as plt
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from translate import Translator
 
 from azure.ai.vision.imageanalysis import ImageAnalysisClient
 from azure.ai.vision.imageanalysis.models import VisualFeatures
 from azure.core.credentials import AzureKeyCredential
 
-def main():
+app = Flask(__name__)
+CORS(app)
 
-    global cv_client
+global cv_client
+
+load_dotenv()
+ai_endpoint = os.getenv('AI_SERVICE_ENDPOINT')
+ai_key = os.getenv('AI_SERVICE_KEY')
+
+# Authenticate Azure AI Vision client
+cv_client = ImageAnalysisClient(
+    endpoint=ai_endpoint,
+    credential=AzureKeyCredential(ai_key)
+)
+
+@app.route('/api/translate', methods=['POST'])
+def translate():
+    if 'file' not in request.files:
+         return jsonify({'error': 'No image'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+         return jsonify({'error': 'No selected file'}), 400
+    
+    language = request.form.get('language')
+    if language == '':
+        return jsonify({'error': 'No selected language'}), 400
 
     try:
-        # Get Configuration Settings
-        load_dotenv()
-        ai_endpoint = os.getenv('AI_SERVICE_ENDPOINT')
-        ai_key = os.getenv('AI_SERVICE_KEY')
+        #language <- language recieved from the frontend
+        fullText = getText(file)
+        translatedText = translateText(fullText, language)
 
-        # Authenticate Azure AI Vision client
-        cv_client = ImageAnalysisClient(
-        endpoint=ai_endpoint,
-        credential=AzureKeyCredential(ai_key)
-        )
-
-        # Menu for text reading functions       // change and delete
-        print('\n1: Use Read API for image (Lincoln.jpg)\n2: Read handwriting (Note.jpg)\nAny other key to quit\n')
-        command = input('Enter a number:')
-        if command == '1':
-            image_file = os.path.join('images','Lincoln.jpg')
-            fullText = GetTextRead(image_file)
-            print(fullText)
-            translatedText = translateText(fullText, 'es')
-            print(translatedText)
-        elif command =='2':
-            image_file = os.path.join('images','Note.jpg')
-            fullText = GetTextRead(image_file)
-            print(fullText)
-            translatedText = translateText(fullText, 'es')
-            print(translatedText)
+        #return the translatedText
+        return jsonify({'text': translatedText}), 200
                 
-
     except Exception as ex:
         print(ex)
 
-def GetTextRead(image_file):
-    print('\n')
 
-    # Open image file
-    with open(image_file, "rb") as f:
-            image_data = f.read()
 
-    # Use Analyze image function to read text in image
-    result = cv_client.analyze(
+def getText(image_file):
+
+    image_data = image_file.read()
+
+    # use the cv client to obtain text
+    extracted_text = cv_client.analyze(
         image_data=image_data,
         visual_features=[VisualFeatures.READ]
     )
 
-    # add a condition for when there is no text
-
     # Append the text into a single string
     fullText = ''
-    for line in result.read.blocks[0].lines:
+    for line in extracted_text.read.blocks[0].lines:
         fullText += line.text
         fullText += '\n'
 
+    print(fullText)
+
     # Return the text detected in the image
     return fullText
+
 
 
 def translateText(text, targetLanguage):
@@ -77,7 +80,5 @@ def translateText(text, targetLanguage):
     return translator.translate(text)
     
 
-
-
 if __name__ == "__main__":
-    main()
+    app.run(debug=True)

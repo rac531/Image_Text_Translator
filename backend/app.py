@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from translate import Translator
 
 from azure.ai.vision.imageanalysis import ImageAnalysisClient
 from azure.ai.vision.imageanalysis.models import VisualFeatures

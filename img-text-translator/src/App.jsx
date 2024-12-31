@@ -27,7 +27,7 @@ function App() {
 
         try {
             // send to the backend
-            const response = await axios.post('http://127.0.0.1:5000/api/translate', formData, {
+            const response = await axios.post('https://image-text-translator-back.onrender.com/api/translate', formData, {
               headers: {
                 'Content-Type': 'multipart/form-data',
               },

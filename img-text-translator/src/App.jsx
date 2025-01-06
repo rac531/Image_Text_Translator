@@ -44,12 +44,16 @@ function App() {
     };
 
     return (
+      <html>
+      <head>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Smooch+Sans:wght@100..900&display=swap" rel="stylesheet"></link>
+      </head>
+      <body>
       <div>
       <h1>Upload Image for Translation</h1>
-      <div>
+      <div id="fileUpload">
         <input type="file" name="file" onChange={imageUpload}/>
-      </div>
-      <div>
+      
         <label for="languages">Select Language:</label>
         <select value={language} onChange={handleLang}>
           <option value="en">English</option>
@@ -61,16 +65,18 @@ function App() {
           <option value="pt">Portuguese</option>
         </select>
       </div>
-      <div>
+      <div id="button">
       <button onClick={handleTranslate}>Translate</button>
       </div>
       {text && (
-        <div>
+        <div id="text">
           <h3>Translated Text:</h3>
           <p>{text}</p>
         </div>
       )}
     </div>
+    </body>
+    </html>
       );
 }
 
